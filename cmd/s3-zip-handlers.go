@@ -109,7 +109,7 @@ func (api objectAPIHandlers) getObjectInArchiveFileHandler(ctx context.Context, 
 			if globalPolicySys.IsAllowed(policy.Args{
 				Action:          policy.ListBucketAction,
 				BucketName:      bucket,
-				ConditionValues: getConditionValues(r, "", "", nil),
+				ConditionValues: getConditionValues(r, "", "", nil, nil),
 				IsOwner:         false,
 			}) {
 				_, err = getObjectInfo(ctx, bucket, zipPath, opts)
@@ -413,7 +413,7 @@ func (api objectAPIHandlers) headObjectInArchiveFileHandler(ctx context.Context,
 			if globalPolicySys.IsAllowed(policy.Args{
 				Action:          policy.ListBucketAction,
 				BucketName:      bucket,
-				ConditionValues: getConditionValues(r, "", "", nil),
+				ConditionValues: getConditionValues(r, "", "", nil, nil),
 				IsOwner:         false,
 			}) {
 				_, err = getObjectInfo(ctx, bucket, zipPath, opts)

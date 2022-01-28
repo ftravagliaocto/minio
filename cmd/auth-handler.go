@@ -33,6 +33,7 @@ import (
 	"sync/atomic"
 	"time"
 
+	"github.com/minio/minio-go/v7/pkg/tags"
 	"github.com/minio/minio/internal/auth"
 	objectlock "github.com/minio/minio/internal/bucket/object/lock"
 	"github.com/minio/minio/internal/etag"
@@ -170,7 +171,7 @@ func checkAdminRequestAuth(ctx context.Context, r *http.Request, action iampolic
 		AccountName:     cred.AccessKey,
 		Groups:          cred.Groups,
 		Action:          iampolicy.Action(action),
-		ConditionValues: getConditionValues(r, "", cred.AccessKey, claims),
+		ConditionValues: getConditionValues(r, "", cred.AccessKey, claims, nil),
 		IsOwner:         owner,
 		Claims:          claims,
 	}) {
@@ -266,7 +267,17 @@ func checkClaimsFromToken(r *http.Request, cred auth.Credentials) (map[string]in
 //   for authenticated requests validates IAM policies.
 // returns APIErrorCode if any to be replied to the client.
 func checkRequestAuthType(ctx context.Context, r *http.Request, action policy.Action, bucketName, objectName string) (s3Err APIErrorCode) {
-	_, _, s3Err = checkRequestAuthTypeCredential(ctx, r, action, bucketName, objectName)
+	_, _, s3Err = checkRequestAuthTypeCredential(ctx, r, action, bucketName, objectName, nil)
+	return s3Err
+}
+
+// Check request auth type verifies the incoming http request
+// - validates the request signature
+// - validates the policy action if anonymous tests bucket policies if any,
+//   for authenticated requests validates IAM policies.
+// returns APIErrorCode if any to be replied to the client.
+func checkRequestAuthTypeAndTagCondition(ctx context.Context, r *http.Request, action policy.Action, bucketName, objectName string, tags *tags.Tags) (s3Err APIErrorCode) {
+	_, _, s3Err = checkRequestAuthTypeCredential(ctx, r, action, bucketName, objectName, tags)
 	return s3Err
 }
 
@@ -276,7 +287,7 @@ func checkRequestAuthType(ctx context.Context, r *http.Request, action policy.Ac
 //   for authenticated requests validates IAM policies.
 // returns APIErrorCode if any to be replied to the client.
 // Additionally returns the accessKey used in the request, and if this request is by an admin.
-func checkRequestAuthTypeCredential(ctx context.Context, r *http.Request, action policy.Action, bucketName, objectName string) (cred auth.Credentials, owner bool, s3Err APIErrorCode) {
+func checkRequestAuthTypeCredential(ctx context.Context, r *http.Request, action policy.Action, bucketName, objectName string, tags *tags.Tags) (cred auth.Credentials, owner bool, s3Err APIErrorCode) {
 	switch getRequestAuthType(r) {
 	case authTypeUnknown, authTypeStreamingSigned:
 		return cred, owner, ErrSignatureVersionNotSupported
@@ -332,7 +343,7 @@ func checkRequestAuthTypeCredential(ctx context.Context, r *http.Request, action
 			AccountName:     cred.AccessKey,
 			Action:          action,
 			BucketName:      bucketName,
-			ConditionValues: getConditionValues(r, locationConstraint, "", nil),
+			ConditionValues: getConditionValues(r, locationConstraint, "", nil, nil),
 			IsOwner:         false,
 			ObjectName:      objectName,
 		}) {
@@ -347,7 +358,7 @@ func checkRequestAuthTypeCredential(ctx context.Context, r *http.Request, action
 				AccountName:     cred.AccessKey,
 				Action:          policy.ListBucketAction,
 				BucketName:      bucketName,
-				ConditionValues: getConditionValues(r, locationConstraint, "", nil),
+				ConditionValues: getConditionValues(r, locationConstraint, "", nil, nil),
 				IsOwner:         false,
 				ObjectName:      objectName,
 			}) {
@@ -364,7 +375,7 @@ func checkRequestAuthTypeCredential(ctx context.Context, r *http.Request, action
 		Groups:          cred.Groups,
 		Action:          iampolicy.Action(action),
 		BucketName:      bucketName,
-		ConditionValues: getConditionValues(r, "", cred.AccessKey, cred.Claims),
+		ConditionValues: getConditionValues(r, "", cred.AccessKey, cred.Claims, tags),
 		ObjectName:      objectName,
 		IsOwner:         owner,
 		Claims:          cred.Claims,
@@ -381,7 +392,7 @@ func checkRequestAuthTypeCredential(ctx context.Context, r *http.Request, action
 			Groups:          cred.Groups,
 			Action:          iampolicy.ListBucketAction,
 			BucketName:      bucketName,
-			ConditionValues: getConditionValues(r, "", cred.AccessKey, cred.Claims),
+			ConditionValues: getConditionValues(r, "", cred.AccessKey, cred.Claims, nil),
 			ObjectName:      objectName,
 			IsOwner:         owner,
 			Claims:          cred.Claims,
@@ -535,7 +546,7 @@ func isPutRetentionAllowed(bucketName, objectName string, retDays int, retDate t
 		return ErrAccessDenied
 	}
 
-	conditions := getConditionValues(r, "", cred.AccessKey, cred.Claims)
+	conditions := getConditionValues(r, "", cred.AccessKey, cred.Claims, nil)
 	conditions["object-lock-mode"] = []string{string(retMode)}
 	conditions["object-lock-retain-until-date"] = []string{retDate.Format(time.RFC3339)}
 	if retDays > 0 {
@@ -609,7 +620,7 @@ func isPutActionAllowed(ctx context.Context, atype authType, bucketName, objectN
 			Groups:          cred.Groups,
 			Action:          policy.Action(action),
 			BucketName:      bucketName,
-			ConditionValues: getConditionValues(r, "", "", nil),
+			ConditionValues: getConditionValues(r, "", "", nil, nil),
 			IsOwner:         false,
 			ObjectName:      objectName,
 		}) {
@@ -623,7 +634,7 @@ func isPutActionAllowed(ctx context.Context, atype authType, bucketName, objectN
 		Groups:          cred.Groups,
 		Action:          action,
 		BucketName:      bucketName,
-		ConditionValues: getConditionValues(r, "", cred.AccessKey, cred.Claims),
+		ConditionValues: getConditionValues(r, "", cred.AccessKey, cred.Claims, nil),
 		ObjectName:      objectName,
 		IsOwner:         owner,
 		Claims:          cred.Claims,

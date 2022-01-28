@@ -27,6 +27,7 @@ import (
 
 	jsoniter "github.com/json-iterator/go"
 	miniogopolicy "github.com/minio/minio-go/v7/pkg/policy"
+	"github.com/minio/minio-go/v7/pkg/tags"
 	"github.com/minio/minio/internal/handlers"
 	xhttp "github.com/minio/minio/internal/http"
 	"github.com/minio/minio/internal/logger"
@@ -63,7 +64,7 @@ func NewPolicySys() *PolicySys {
 	return &PolicySys{}
 }
 
-func getConditionValues(r *http.Request, lc string, username string, claims map[string]interface{}) map[string][]string {
+func getConditionValues(r *http.Request, lc string, username string, claims map[string]interface{}, tags *tags.Tags) map[string][]string {
 	currTime := UTCNow()
 
 	principalType := "Anonymous"
@@ -116,6 +117,13 @@ func getConditionValues(r *http.Request, lc string, username string, claims map[
 		"versionid":        {vid},
 		"signatureversion": {signatureVersion},
 		"authType":         {authtype},
+	}
+
+	// Object tag value injection
+	if tags != nil {
+		for key, value := range tags.ToMap() {
+			args["ExistingObjectTag/"+key] = []string{value}
+		}
 	}
 
 	if lc != "" {

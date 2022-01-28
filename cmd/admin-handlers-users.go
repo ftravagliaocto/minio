@@ -178,7 +178,7 @@ func (a adminAPIHandlers) GetUserInfo(w http.ResponseWriter, r *http.Request) {
 		AccountName:     cred.AccessKey,
 		Groups:          cred.Groups,
 		Action:          iampolicy.GetUserAdminAction,
-		ConditionValues: getConditionValues(r, "", cred.AccessKey, claims),
+		ConditionValues: getConditionValues(r, "", cred.AccessKey, claims, nil),
 		IsOwner:         owner,
 		Claims:          claims,
 		DenyOnly:        checkDenyOnly,
@@ -441,7 +441,7 @@ func (a adminAPIHandlers) AddUser(w http.ResponseWriter, r *http.Request) {
 		AccountName:     cred.AccessKey,
 		Groups:          cred.Groups,
 		Action:          iampolicy.CreateUserAdminAction,
-		ConditionValues: getConditionValues(r, "", cred.AccessKey, claims),
+		ConditionValues: getConditionValues(r, "", cred.AccessKey, claims, nil),
 		IsOwner:         owner,
 		Claims:          claims,
 		DenyOnly:        checkDenyOnly,
@@ -568,7 +568,7 @@ func (a adminAPIHandlers) AddServiceAccount(w http.ResponseWriter, r *http.Reque
 			AccountName:     requestorUser,
 			Groups:          requestorGroups,
 			Action:          iampolicy.CreateServiceAccountAdminAction,
-			ConditionValues: getConditionValues(r, "", cred.AccessKey, claims),
+			ConditionValues: getConditionValues(r, "", cred.AccessKey, claims, nil),
 			IsOwner:         owner,
 			Claims:          claims,
 			DenyOnly:        true,
@@ -602,7 +602,7 @@ func (a adminAPIHandlers) AddServiceAccount(w http.ResponseWriter, r *http.Reque
 			AccountName:     requestorUser,
 			Groups:          requestorGroups,
 			Action:          iampolicy.CreateServiceAccountAdminAction,
-			ConditionValues: getConditionValues(r, "", cred.AccessKey, claims),
+			ConditionValues: getConditionValues(r, "", cred.AccessKey, claims, nil),
 			IsOwner:         owner,
 			Claims:          claims,
 			DenyOnly:        true,
@@ -724,7 +724,7 @@ func (a adminAPIHandlers) UpdateServiceAccount(w http.ResponseWriter, r *http.Re
 	if !globalIAMSys.IsAllowed(iampolicy.Args{
 		AccountName:     cred.AccessKey,
 		Action:          iampolicy.UpdateServiceAccountAdminAction,
-		ConditionValues: getConditionValues(r, "", cred.AccessKey, claims),
+		ConditionValues: getConditionValues(r, "", cred.AccessKey, claims, nil),
 		IsOwner:         owner,
 		Claims:          claims,
 	}) {
@@ -827,7 +827,7 @@ func (a adminAPIHandlers) InfoServiceAccount(w http.ResponseWriter, r *http.Requ
 	if !globalIAMSys.IsAllowed(iampolicy.Args{
 		AccountName:     cred.AccessKey,
 		Action:          iampolicy.ListServiceAccountsAdminAction,
-		ConditionValues: getConditionValues(r, "", cred.AccessKey, claims),
+		ConditionValues: getConditionValues(r, "", cred.AccessKey, claims, nil),
 		IsOwner:         owner,
 		Claims:          claims,
 	}) {
@@ -911,7 +911,7 @@ func (a adminAPIHandlers) ListServiceAccounts(w http.ResponseWriter, r *http.Req
 		if !globalIAMSys.IsAllowed(iampolicy.Args{
 			AccountName:     cred.AccessKey,
 			Action:          iampolicy.ListServiceAccountsAdminAction,
-			ConditionValues: getConditionValues(r, "", cred.AccessKey, claims),
+			ConditionValues: getConditionValues(r, "", cred.AccessKey, claims, nil),
 			IsOwner:         owner,
 			Claims:          claims,
 		}) {
@@ -991,7 +991,7 @@ func (a adminAPIHandlers) DeleteServiceAccount(w http.ResponseWriter, r *http.Re
 	adminPrivilege := globalIAMSys.IsAllowed(iampolicy.Args{
 		AccountName:     cred.AccessKey,
 		Action:          iampolicy.RemoveServiceAccountAdminAction,
-		ConditionValues: getConditionValues(r, "", cred.AccessKey, claims),
+		ConditionValues: getConditionValues(r, "", cred.AccessKey, claims, nil),
 		IsOwner:         owner,
 		Claims:          claims,
 	})
@@ -1069,7 +1069,7 @@ func (a adminAPIHandlers) AccountInfoHandler(w http.ResponseWriter, r *http.Requ
 			Groups:          cred.Groups,
 			Action:          iampolicy.ListBucketAction,
 			BucketName:      bucketName,
-			ConditionValues: getConditionValues(r, "", cred.AccessKey, claims),
+			ConditionValues: getConditionValues(r, "", cred.AccessKey, claims, nil),
 			IsOwner:         owner,
 			ObjectName:      "",
 			Claims:          claims,
@@ -1082,7 +1082,7 @@ func (a adminAPIHandlers) AccountInfoHandler(w http.ResponseWriter, r *http.Requ
 			Groups:          cred.Groups,
 			Action:          iampolicy.PutObjectAction,
 			BucketName:      bucketName,
-			ConditionValues: getConditionValues(r, "", cred.AccessKey, claims),
+			ConditionValues: getConditionValues(r, "", cred.AccessKey, claims, nil),
 			IsOwner:         owner,
 			ObjectName:      "",
 			Claims:          claims,

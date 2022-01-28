@@ -683,7 +683,7 @@ func AuthMiddleware(h http.Handler) http.Handler {
 		if !globalIAMSys.IsAllowed(iampolicy.Args{
 			AccountName:     claims.AccessKey,
 			Action:          iampolicy.PrometheusAdminAction,
-			ConditionValues: getConditionValues(r, "", claims.AccessKey, claims.Map()),
+			ConditionValues: getConditionValues(r, "", claims.AccessKey, claims.Map(), nil),
 			IsOwner:         owner,
 			Claims:          claims.Map(),
 		}) {

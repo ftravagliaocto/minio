@@ -157,10 +157,18 @@ func (api objectAPIHandlers) SelectObjectContentHandler(w http.ResponseWriter, r
 			// * if you don’t have the s3:ListBucket
 			//   permission, Amazon S3 will return an HTTP
 			//   status code 403 ("access denied") error.`
+			// Get object tags
+			objAPI := api.ObjectAPI()
+			tags, err := objAPI.GetObjectTags(ctx, bucket, object, opts)
+			if err != nil {
+				writeErrorResponse(ctx, w, toAPIError(ctx, err), r.URL)
+				return
+			}
+
 			if globalPolicySys.IsAllowed(policy.Args{
 				Action:          policy.ListBucketAction,
 				BucketName:      bucket,
-				ConditionValues: getConditionValues(r, "", "", nil),
+				ConditionValues: getConditionValues(r, "", "", nil, tags),
 				IsOwner:         false,
 			}) {
 				_, err = getObjectInfo(ctx, bucket, object, opts)
@@ -348,7 +356,7 @@ func (api objectAPIHandlers) getObjectHandler(ctx context.Context, objectAPI Obj
 			if globalPolicySys.IsAllowed(policy.Args{
 				Action:          policy.ListBucketAction,
 				BucketName:      bucket,
-				ConditionValues: getConditionValues(r, "", "", nil),
+				ConditionValues: getConditionValues(r, "", "", nil, nil),
 				IsOwner:         false,
 			}) {
 				getObjectInfo := objectAPI.GetObjectInfo
@@ -596,8 +604,9 @@ func (api objectAPIHandlers) headObjectHandler(ctx context.Context, objectAPI Ob
 		writeErrorResponseHeadersOnly(w, toAPIError(ctx, err))
 		return
 	}
-
-	if s3Error := checkRequestAuthType(ctx, r, policy.GetObjectAction, bucket, object); s3Error != ErrNone {
+	objAPI := api.ObjectAPI()
+	tags, err := objAPI.GetObjectTags(ctx, bucket, object, opts)
+	if s3Error := checkRequestAuthTypeAndTagCondition(ctx, r, policy.GetObjectAction, bucket, object, tags); s3Error != ErrNone {
 		if getRequestAuthType(r) == authTypeAnonymous {
 			// As per "Permission" section in
 			// https://docs.aws.amazon.com/AmazonS3/latest/API/RESTObjectHEAD.html
@@ -612,10 +621,11 @@ func (api objectAPIHandlers) headObjectHandler(ctx context.Context, objectAPI Ob
 			// * if you don’t have the s3:ListBucket
 			//   permission, Amazon S3 will return an HTTP
 			//   status code 403 ("access denied") error.`
+
 			if globalPolicySys.IsAllowed(policy.Args{
 				Action:          policy.ListBucketAction,
 				BucketName:      bucket,
-				ConditionValues: getConditionValues(r, "", "", nil),
+				ConditionValues: getConditionValues(r, "", "", nil, nil),
 				IsOwner:         false,
 			}) {
 				_, err = getObjectInfo(ctx, bucket, object, opts)

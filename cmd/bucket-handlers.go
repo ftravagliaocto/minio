@@ -298,7 +298,7 @@ func (api objectAPIHandlers) ListBucketsHandler(w http.ResponseWriter, r *http.R
 
 	listBuckets := objectAPI.ListBuckets
 
-	cred, owner, s3Error := checkRequestAuthTypeCredential(ctx, r, policy.ListAllMyBucketsAction, "", "")
+	cred, owner, s3Error := checkRequestAuthTypeCredential(ctx, r, policy.ListAllMyBucketsAction, "", "", nil)
 	if s3Error != ErrNone && s3Error != ErrAccessDenied {
 		writeErrorResponse(ctx, w, errorCodes.ToAPIErr(s3Error), r.URL)
 		return
@@ -357,7 +357,7 @@ func (api objectAPIHandlers) ListBucketsHandler(w http.ResponseWriter, r *http.R
 				Groups:          cred.Groups,
 				Action:          iampolicy.ListBucketAction,
 				BucketName:      bucketInfo.Name,
-				ConditionValues: getConditionValues(r, "", cred.AccessKey, cred.Claims),
+				ConditionValues: getConditionValues(r, "", cred.AccessKey, cred.Claims, nil),
 				IsOwner:         owner,
 				ObjectName:      "",
 				Claims:          cred.Claims,
@@ -952,7 +952,7 @@ func (api objectAPIHandlers) PostPolicyBucketHandler(w http.ResponseWriter, r *h
 	if !globalIAMSys.IsAllowed(iampolicy.Args{
 		AccountName:     cred.AccessKey,
 		Action:          iampolicy.PutObjectAction,
-		ConditionValues: getConditionValues(r, "", cred.AccessKey, cred.Claims),
+		ConditionValues: getConditionValues(r, "", cred.AccessKey, cred.Claims, nil),
 		BucketName:      bucket,
 		ObjectName:      object,
 		IsOwner:         globalActiveCred.AccessKey == cred.AccessKey,
@@ -1163,7 +1163,7 @@ func (api objectAPIHandlers) GetBucketPolicyStatusHandler(w http.ResponseWriter,
 	readable := globalPolicySys.IsAllowed(policy.Args{
 		Action:          policy.ListBucketAction,
 		BucketName:      bucket,
-		ConditionValues: getConditionValues(r, "", "", nil),
+		ConditionValues: getConditionValues(r, "", "", nil, nil),
 		IsOwner:         false,
 	})
 
@@ -1171,7 +1171,7 @@ func (api objectAPIHandlers) GetBucketPolicyStatusHandler(w http.ResponseWriter,
 	writable := globalPolicySys.IsAllowed(policy.Args{
 		Action:          policy.PutObjectAction,
 		BucketName:      bucket,
-		ConditionValues: getConditionValues(r, "", "", nil),
+		ConditionValues: getConditionValues(r, "", "", nil, nil),
 		IsOwner:         false,
 	})
 
